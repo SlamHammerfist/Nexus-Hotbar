@@ -1,0 +1,1017 @@
+/* ------------------------------------------ */
+/*  Nexus Hotbar                              */
+/* ------------------------------------------ */
+
+#hotbar.nexus-hotbar {
+  --nex-slot-size: 50px;
+  --nex-gap: 4px;
+  --nex-action: #4caf50;
+  --nex-bonus: #f39c12;
+  --nex-reaction: #b36bff;
+  --nex-accent: var(--color-warm-2, #ff6400);
+
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  flex: none;
+  width: max-content;
+  height: auto;
+  margin: 0 0 16px;
+  gap: 8px;
+}
+
+#hotbar.nexus-hotbar > * {
+  flex: none;
+}
+
+/* Fade when idle (gear dialog > Appearance) */
+#hotbar.nexus-hotbar {
+  transition: opacity 0.6s ease;
+}
+
+#hotbar.nexus-hotbar.nex-idle {
+  opacity: var(--nex-idle-opacity, 0.3);
+}
+
+/* Side controls */
+#hotbar.nexus-hotbar .nex-controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  pointer-events: all;
+}
+
+/* Two columns: rests span both on top, then +/- on the left and lock/settings on the right */
+#hotbar.nexus-hotbar .nex-controls-right {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  align-content: end;
+  gap: 4px;
+}
+
+#hotbar.nexus-hotbar .nex-controls-right .nex-rest {
+  grid-column: 1 / span 2;
+  width: 100%;
+}
+
+/* Combat control: takes the place of both rest buttons (2 high x 2 wide) */
+#hotbar.nexus-hotbar .nex-controls-right .nex-combat {
+  grid-column: 1 / span 2;
+  grid-row: span 2;
+  width: 100%;
+  height: 100%;
+  font-size: 1.25rem;
+}
+
+#hotbar.nexus-hotbar .nex-combat.roll {
+  color: var(--nex-accent);
+}
+
+#hotbar.nexus-hotbar .nex-combat.turn {
+  color: var(--nex-action);
+  box-shadow: 0 0 8px var(--nex-action);
+  animation: nex-turn-pulse 1.6s ease-in-out infinite;
+}
+
+/* Amber with a dark outline so it reads on both light and dark themes */
+#hotbar.nexus-hotbar .nex-combat.waiting,
+#hotbar.nexus-hotbar .nex-combat.waiting:hover {
+  color: #e0a526;
+  text-shadow: 0 0 1px #000, 0 0 3px rgba(0, 0, 0, 0.8);
+  cursor: default;
+  opacity: 1;
+}
+
+/* Your-turn alert: the whole bar flashes green a few times */
+#hotbar.nexus-hotbar.nex-your-turn .nex-main,
+#hotbar.nexus-hotbar.nex-your-turn .nex-portrait {
+  animation: nex-your-turn-flash 0.6s ease-in-out 4;
+}
+
+@keyframes nex-your-turn-flash {
+  0%, 100% { box-shadow: 0 0 4px #000; }
+  50% { box-shadow: 0 0 18px 4px var(--nex-action); }
+}
+
+@keyframes nex-turn-pulse {
+  0%, 100% { box-shadow: 0 0 4px var(--nex-action); }
+  50% { box-shadow: 0 0 12px var(--nex-action); }
+}
+
+#hotbar.nexus-hotbar .nex-controls button {
+  --button-size: 1.5rem;
+  --control-size: 1.5rem;
+}
+
+#hotbar.nexus-hotbar .nex-controls button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Stat column (left of the portrait), laid out like the loadout column */
+#hotbar.nexus-hotbar .nex-stats {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--nex-gap);
+  padding: 4px;
+  border: 1px solid var(--color-cool-4, #302831);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 4px #000, inset 0 0 6px rgba(0, 0, 0, 0.6);
+  pointer-events: all;
+}
+
+#hotbar.nexus-hotbar .nex-stat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--nex-slot-size);
+  height: var(--nex-slot-size);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--color-cool-5-90, rgba(11, 10, 19, 0.9));
+  box-shadow: 0 0 4px #000;
+  color: var(--color-light-2, #ddd);
+  font-size: calc(var(--nex-slot-size) * 0.4);
+  cursor: pointer;
+}
+
+/* Same height as the loadout column, with the three boxes spaced evenly */
+#hotbar.nexus-hotbar .nex-stats {
+  height: calc((var(--nex-slot-size) * 3) + (var(--nex-gap) * 2) + 14px);
+  justify-content: space-between;
+}
+
+#hotbar.nexus-hotbar .nex-stat {
+  cursor: default;
+}
+
+#hotbar.nexus-hotbar .nex-stat.rollable,
+#hotbar.nexus-hotbar .nex-stat.open {
+  cursor: pointer;
+}
+
+#hotbar.nexus-hotbar .nex-stat.rollable:hover,
+#hotbar.nexus-hotbar .nex-stat.open:hover {
+  border-color: var(--nex-accent);
+}
+
+/* Faint icon behind the number */
+#hotbar.nexus-hotbar .nex-stat-icon {
+  position: absolute;
+  top: 4px;
+  font-size: calc(var(--nex-slot-size) * 0.32);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+#hotbar.nexus-hotbar .nex-stat-value {
+  position: relative;
+  margin-top: -6px;
+  color: var(--color-light-1, #fff);
+  font-size: calc(var(--nex-slot-size) * 0.36);
+  font-weight: bold;
+  line-height: 1;
+  text-shadow: 0 0 3px #000;
+}
+
+/* Short name along the bottom: AC, FT, INIT, PRC... */
+#hotbar.nexus-hotbar .nex-stat-label {
+  position: absolute;
+  bottom: 3px;
+  color: var(--color-light-4, #aaa);
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+#hotbar.nexus-hotbar .nex-stat.open {
+  border: 1px dashed var(--color-cool-4, #302831);
+  opacity: 0.6;
+}
+
+#hotbar.nexus-hotbar .nex-stat.open .nex-stat-icon {
+  position: static;
+  font-size: calc(var(--nex-slot-size) * 0.3);
+  opacity: 1;
+  color: var(--color-light-5, #888);
+}
+
+/* Token portrait (far left), same height as the loadout column */
+#hotbar.nexus-hotbar .nex-portrait {
+  /* Loadout: 3 boxes + 2 gaps + 4px unarmed spacing + 8px padding + 2px border */
+  --nex-portrait-size: calc((var(--nex-slot-size) * 3) + (var(--nex-gap) * 2) + 14px);
+  position: relative;
+  width: var(--nex-portrait-size);
+  height: var(--nex-portrait-size);
+  border: 1px solid var(--color-cool-4, #302831);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 4px #000, inset 0 0 6px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  cursor: pointer;
+  pointer-events: all;
+}
+
+#hotbar.nexus-hotbar .nex-portrait:hover {
+  border-color: var(--nex-accent);
+}
+
+#hotbar.nexus-hotbar .nex-portrait img {
+  width: 100%;
+  height: 100%;
+  border: none;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Death saves (0 HP): portrait goes grey, pips and roll button over it */
+#hotbar.nexus-hotbar .nex-portrait.dying img {
+  filter: grayscale(1) brightness(0.55);
+}
+
+#hotbar.nexus-hotbar .nex-portrait.dead img {
+  filter: grayscale(1) brightness(0.3);
+}
+
+#hotbar.nexus-hotbar .nex-death {
+  position: absolute;
+  inset: 6px 6px 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+#hotbar.nexus-hotbar .nex-death-row {
+  display: flex;
+  gap: 6px;
+}
+
+#hotbar.nexus-hotbar .nex-death-pip,
+#hotbar.nexus-hotbar .nex-death-pip:hover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--nex-pip);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 3px #000;
+  color: transparent;
+  font-size: 11px;
+}
+
+#hotbar.nexus-hotbar .nex-death-row.success { --nex-pip: #3ba55d; }
+#hotbar.nexus-hotbar .nex-death-row.failure { --nex-pip: #d23b3b; }
+
+#hotbar.nexus-hotbar .nex-death-pip:hover {
+  color: color-mix(in srgb, var(--nex-pip) 50%, transparent);
+}
+
+#hotbar.nexus-hotbar .nex-death-pip.filled,
+#hotbar.nexus-hotbar .nex-death-pip.filled:hover {
+  background: var(--nex-pip);
+  color: #fff;
+}
+
+#hotbar.nexus-hotbar .nex-death-roll,
+#hotbar.nexus-hotbar .nex-death-roll:hover,
+#hotbar.nexus-hotbar .nex-death-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--color-light-4, #aaa);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  box-shadow: 0 0 6px #000;
+  color: #eee;
+  font-size: 20px;
+}
+
+#hotbar.nexus-hotbar .nex-death-roll:hover {
+  border-color: var(--nex-accent);
+  color: var(--nex-accent);
+  box-shadow: 0 0 8px var(--nex-accent);
+}
+
+#hotbar.nexus-hotbar .nex-death-status.stable {
+  border-color: #3ba55d;
+  color: #3ba55d;
+}
+
+#hotbar.nexus-hotbar .nex-death-status.dead {
+  border-color: #d23b3b;
+  color: #d23b3b;
+}
+
+/*
+ * Hit point meter along the bottom of the portrait, styled after the dnd5e character sheet:
+ * dark track, green gradient fill, gold underline, "value / max", and a TMP box on the right.
+ */
+#hotbar.nexus-hotbar .nex-hp {
+  --nex-hp-1: var(--dnd5e-color-hp-1, #1b4b29);
+  --nex-hp-2: var(--dnd5e-color-hp-2, #3ba55d);
+  --nex-hp-gold: var(--dnd5e-color-gold, #9f9275);
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  height: 22px;
+  border-radius: 3px 3px 0 0;
+  border-bottom: 1px solid var(--nex-hp-gold);
+  background: var(--dnd5e-color-light-gray, #3d3d3d);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  font-family: var(--dnd5e-font-roboto, Roboto, sans-serif);
+  color: var(--color-text-light-0, #fff);
+  overflow: hidden;
+  cursor: default;
+}
+
+/* Editable boxes: plain text on the bar, gold glow on hover / focus like the sheet */
+#hotbar.nexus-hotbar .nex-hp-input {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: bold;
+  text-align: center;
+  text-shadow: 0 0 2px #000;
+  outline: none;
+}
+
+#hotbar.nexus-hotbar .nex-hp-input[hidden] {
+  display: none;
+}
+
+#hotbar.nexus-hotbar .nex-hp-bar:hover,
+#hotbar.nexus-hotbar .nex-hp-tmp:hover,
+#hotbar.nexus-hotbar .nex-hp-input:focus {
+  box-shadow: inset 0 0 6px var(--nex-hp-gold);
+}
+
+#hotbar.nexus-hotbar .nex-hp-bar {
+  cursor: text;
+}
+
+/* While editing HP, the input replaces the "value / max" label */
+#hotbar.nexus-hotbar .nex-hp-bar.editing .nex-hp-label {
+  display: none;
+}
+
+#hotbar.nexus-hotbar .nex-hp-bar {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Green fill with the sheet's inner highlight */
+#hotbar.nexus-hotbar .nex-hp-bar::before {
+  content: "";
+  position: absolute;
+  inset: 1px auto 1px 1px;
+  width: calc(var(--bar-percentage) - 2px);
+  max-width: calc(100% - 2px);
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--nex-hp-1) 0%, var(--nex-hp-2) 100%);
+  box-shadow: inset 0 1px 0 1px rgba(255, 255, 255, 0.4);
+  transition: width 0.3s ease;
+}
+
+#hotbar.nexus-hotbar .nex-hp-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: bold;
+  text-shadow: 0 0 2px #000;
+}
+
+#hotbar.nexus-hotbar .nex-hp-label .separator {
+  opacity: 0.7;
+  font-weight: normal;
+}
+
+#hotbar.nexus-hotbar .nex-hp-label .bonus {
+  font-size: 10px;
+}
+
+/* Max HP tinted when it's raised or lowered temporarily, like the sheet */
+#hotbar.nexus-hotbar .nex-hp-bar.temp-positive :is(.max, .bonus) {
+  color: color-mix(in oklab, currentcolor, blue 25%);
+}
+
+#hotbar.nexus-hotbar .nex-hp-bar.temp-negative :is(.max, .bonus) {
+  color: color-mix(in oklab, currentcolor, red 25%);
+}
+
+/* Temp HP box on the right, separated by a dashed gold line */
+#hotbar.nexus-hotbar .nex-hp-tmp {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  border-left: 1px dashed var(--nex-hp-gold);
+  color: var(--dnd5e-color-blue, cornflowerblue);
+  font-size: 13px;
+  font-weight: bold;
+  text-shadow: 0 0 2px #000;
+}
+
+#hotbar.nexus-hotbar .nex-hp-tmp .nex-hp-input::placeholder {
+  color: var(--color-text-light-6, #999);
+  font-size: 10px;
+  font-weight: normal;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+/* Weapon loadout column (left of the slots): main hand, off hand, unarmed strike */
+#hotbar.nexus-hotbar .nex-loadout {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--nex-gap);
+  padding: 4px;
+  border: 1px solid var(--color-cool-4, #302831);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 4px #000, inset 0 0 6px rgba(0, 0, 0, 0.6);
+  pointer-events: all;
+}
+
+#hotbar.nexus-hotbar .nex-loadout-slot {
+  position: relative;
+  width: var(--nex-slot-size);
+  height: var(--nex-slot-size);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--color-cool-5-90, rgba(11, 10, 19, 0.9));
+  box-shadow: 0 0 4px #000;
+  cursor: pointer;
+}
+
+#hotbar.nexus-hotbar .nex-loadout-slot img {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 6px;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+#hotbar.nexus-hotbar .nex-loadout-slot:hover,
+#hotbar.nexus-hotbar .nex-loadout-slot.drop-target {
+  border-color: var(--nex-accent);
+}
+
+/* Empty hand: faint placeholder icon */
+#hotbar.nexus-hotbar .nex-loadout-slot.open {
+  border: 1px dashed var(--color-cool-4, #302831);
+}
+
+#hotbar.nexus-hotbar .nex-loadout-slot.open img {
+  padding: 20%;
+  object-fit: contain;
+  opacity: 0.35;
+}
+
+/* Two-handed weapon: same icon in both hand boxes, with a shared accent edge */
+#hotbar.nexus-hotbar .nex-loadout-slot.two-handed {
+  border-color: color-mix(in srgb, var(--nex-accent) 45%, transparent);
+}
+
+/* Unarmed strike sits a little apart from the hand boxes */
+#hotbar.nexus-hotbar .nex-loadout-slot.unarmed {
+  margin-top: 4px;
+}
+
+/* Main column */
+#hotbar.nexus-hotbar .nex-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: all;
+}
+
+/* Header: name, tabs, highlight buttons */
+#hotbar.nexus-hotbar .nex-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#hotbar.nexus-hotbar .nex-tabs,
+#hotbar.nexus-hotbar .nex-highlights {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#hotbar.nexus-hotbar .nex-title {
+  max-width: 160px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 6px;
+  font-family: var(--font-h3, inherit);
+  font-size: var(--font-size-14, 14px);
+  color: var(--color-light-1, #f0f0e0);
+  text-shadow: 0 0 4px #000;
+}
+
+#hotbar.nexus-hotbar .nex-hint {
+  font-size: var(--font-size-12, 12px);
+  color: var(--color-light-4, #aaa);
+  font-style: italic;
+  text-shadow: 0 0 4px #000;
+}
+
+#hotbar.nexus-hotbar .nex-tab,
+#hotbar.nexus-hotbar .nex-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: auto;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--color-cool-4, #302831);
+  border-radius: 12px;
+  background: var(--color-cool-5-90, rgba(11, 10, 19, 0.9));
+  color: var(--color-light-3, #ccc);
+  font-size: var(--font-size-12, 12px);
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Tabs: just the icon, inside a frame */
+#hotbar.nexus-hotbar .nex-tab,
+#hotbar.nexus-hotbar .nex-tab:hover,
+#hotbar.nexus-hotbar .nex-tab.active {
+  justify-content: center;
+  width: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  font-size: 13px;
+}
+
+#hotbar.nexus-hotbar .nex-tab {
+  color: var(--color-light-3, #ccc);
+  opacity: 0.5;
+}
+
+#hotbar.nexus-hotbar .nex-tab:hover {
+  opacity: 0.9;
+}
+
+#hotbar.nexus-hotbar .nex-tab.active {
+  color: var(--nex-accent);
+  opacity: 1;
+  filter: drop-shadow(0 0 4px var(--nex-accent));
+}
+
+#hotbar.nexus-hotbar .nex-highlight[data-type="action"] { --nex-hl: var(--nex-action); }
+#hotbar.nexus-hotbar .nex-highlight[data-type="bonus"] { --nex-hl: var(--nex-bonus); }
+#hotbar.nexus-hotbar .nex-highlight[data-type="reaction"] { --nex-hl: var(--nex-reaction); }
+
+/* Just the symbol: no box around each button */
+#hotbar.nexus-hotbar .nex-highlight,
+#hotbar.nexus-hotbar .nex-highlight:hover,
+#hotbar.nexus-hotbar .nex-highlight.active {
+  justify-content: center;
+  width: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  color: var(--nex-hl);
+  font-size: 13px;
+}
+
+#hotbar.nexus-hotbar .nex-highlight {
+  opacity: 0.55;
+}
+
+#hotbar.nexus-hotbar .nex-highlight:hover {
+  opacity: 0.9;
+}
+
+#hotbar.nexus-hotbar .nex-highlight.active {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px var(--nex-hl));
+}
+
+/* Active conditions / timed effects */
+#hotbar.nexus-hotbar .nex-effects {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-width: 0;
+  margin-left: auto;
+}
+
+/* Frames around the tabs, action symbols and the effects */
+#hotbar.nexus-hotbar .nex-tabs,
+#hotbar.nexus-hotbar .nex-highlights,
+#hotbar.nexus-hotbar .nex-effects {
+  padding: 3px 5px;
+  border: 1px solid var(--color-cool-4, #302831);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 4px #000, inset 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+#hotbar.nexus-hotbar .nex-effect {
+  width: 22px;
+  height: 22px;
+  cursor: context-menu;
+}
+
+#hotbar.nexus-hotbar .nex-effect:hover {
+  filter: drop-shadow(0 0 4px #e05050);
+}
+
+#hotbar.nexus-hotbar .nex-effect img {
+  width: 100%;
+  height: 100%;
+  border: none;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Passive features (framed group in the header row) */
+#hotbar.nexus-hotbar .nex-passives {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 5px;
+  border: 1px solid var(--color-cool-4, #302831);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 4px #000, inset 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+#hotbar.nexus-hotbar .nex-passives.drop-target {
+  border-color: var(--nex-accent);
+  box-shadow: 0 0 8px var(--nex-accent);
+}
+
+#hotbar.nexus-hotbar .nex-passives-choose,
+#hotbar.nexus-hotbar .nex-passives-choose:hover {
+  width: 20px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  color: var(--color-light-3, #ccc);
+  font-size: 13px;
+}
+
+#hotbar.nexus-hotbar .nex-passives-choose {
+  opacity: 0.6;
+}
+
+#hotbar.nexus-hotbar .nex-passives-choose:hover {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px var(--nex-accent));
+}
+
+#hotbar.nexus-hotbar .nex-passive {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+#hotbar.nexus-hotbar .nex-passive:hover {
+  filter: drop-shadow(0 0 4px var(--nex-accent));
+}
+
+#hotbar.nexus-hotbar .nex-passive img {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 4px;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Choose Passives dialog */
+.nexus-choose-dialog .nex-choose-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.nexus-choose-dialog .nex-choose-list h4 {
+  margin: 8px 0 4px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--color-border, #555);
+}
+
+.nexus-choose-dialog .nex-choose-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.nexus-choose-dialog .nex-choose-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Portrait right-click roll dialog */
+.nexus-roll-dialog h4 {
+  margin: 6px 0 4px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--color-border, #555);
+}
+
+.nexus-roll-dialog .nex-roll-abilities {
+  display: grid;
+  grid-template-columns: 3rem 1fr 1fr;
+  gap: 4px 6px;
+  align-items: center;
+}
+
+.nexus-roll-dialog .nex-roll-head {
+  font-size: var(--font-size-11, 11px);
+  text-align: center;
+  opacity: 0.7;
+}
+
+.nexus-roll-dialog .nex-roll-ability {
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+.nexus-roll-dialog .nex-roll-skills {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 6px;
+}
+
+.nexus-roll-dialog .nex-roll-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  font-size: var(--font-size-13, 13px);
+}
+
+.nexus-roll-dialog .nex-roll-btn.compact {
+  justify-content: center;
+}
+
+.nexus-roll-dialog .nex-roll-mod {
+  font-weight: bold;
+}
+
+/* Proficient skills get a small gold dot */
+.nexus-roll-dialog .nex-roll-btn.proficient .nex-roll-name::before {
+  content: "\25CF";
+  margin-right: 4px;
+  color: var(--dnd5e-color-gold, #9f9275);
+  font-size: 9px;
+  vertical-align: middle;
+}
+
+.nexus-choose-dialog .nex-choose-icon {
+  width: 24px;
+  text-align: center;
+  font-size: 16px;
+}
+
+/* Settings dialog tabs */
+.nexus-settings-dialog .nex-settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--color-border, #555);
+}
+
+.nexus-settings-dialog .nex-settings-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+.nexus-settings-dialog .nex-settings-tab:hover {
+  opacity: 0.9;
+}
+
+.nexus-settings-dialog .nex-settings-tab.active {
+  border-bottom-color: var(--color-warm-2, #ff6400);
+  opacity: 1;
+}
+
+.nexus-settings-dialog .nex-settings-panel[hidden] {
+  display: none;
+}
+
+.nexus-settings-dialog input[type="color"] {
+  flex: 0 0 4rem;
+  height: 28px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.nexus-settings-dialog .nex-accent-reset {
+  flex: 0 0 auto;
+}
+
+.nexus-settings-dialog .nex-range-value {
+  flex: 0 0 3rem;
+  text-align: right;
+  font-weight: bold;
+}
+
+.nexus-settings-dialog .nex-settings-scope {
+  margin: 6px 0 4px;
+  font-style: italic;
+}
+
+.nexus-settings-dialog .nex-settings-scope i {
+  margin-right: 4px;
+}
+
+.nexus-settings-dialog .nex-settings-checks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+}
+
+.nexus-settings-dialog .nex-settings-checks label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-13, 13px);
+}
+
+.nexus-settings-dialog .nex-settings-heading {
+  margin: 10px 0 4px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--color-border, #555);
+}
+
+.nexus-choose-dialog .nex-choose-tag {
+  margin-left: auto;
+  font-size: var(--font-size-11, 11px);
+  opacity: 0.7;
+}
+
+.nexus-choose-dialog .nex-choose-row img {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+}
+
+/* Grid */
+#hotbar.nexus-hotbar .nex-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nex-gap);
+}
+
+#hotbar.nexus-hotbar .nex-row {
+  display: flex;
+  gap: var(--nex-gap);
+}
+
+#hotbar.nexus-hotbar .nex-slot {
+  position: relative;
+  flex: none;
+  width: var(--nex-slot-size);
+  height: var(--nex-slot-size);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--color-cool-5-90, rgba(11, 10, 19, 0.9));
+  box-shadow: 0 0 4px #000;
+  cursor: pointer;
+  transition: opacity 0.15s, filter 0.15s, border-color 0.15s;
+}
+
+#hotbar.nexus-hotbar .nex-slot.open {
+  border: 1px dashed var(--color-cool-4, #302831);
+  cursor: default;
+}
+
+#hotbar.nexus-hotbar .nex-slot img {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 6px;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+#hotbar.nexus-hotbar .nex-slot:hover {
+  border-color: var(--nex-accent);
+}
+
+#hotbar.nexus-hotbar .nex-slot.drop-target {
+  border: 2px solid var(--nex-accent);
+  box-shadow: 0 0 8px var(--nex-accent);
+}
+
+/* Activation pip (top right) */
+#hotbar.nexus-hotbar .nex-slot[data-act="action"] { --nex-act: var(--nex-action); }
+#hotbar.nexus-hotbar .nex-slot[data-act="bonus"] { --nex-act: var(--nex-bonus); }
+#hotbar.nexus-hotbar .nex-slot[data-act="reaction"] { --nex-act: var(--nex-reaction); }
+
+#hotbar.nexus-hotbar .nex-pip {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--nex-act);
+  box-shadow: 0 0 2px #000, 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+/* Spell level (top left) and charges / quantity (bottom right) */
+#hotbar.nexus-hotbar .nex-level,
+#hotbar.nexus-hotbar .nex-count {
+  position: absolute;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--color-light-1, #fff);
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 14px;
+  pointer-events: none;
+}
+
+#hotbar.nexus-hotbar .nex-level {
+  top: 2px;
+  left: 2px;
+}
+
+#hotbar.nexus-hotbar .nex-count {
+  bottom: 2px;
+  right: 2px;
+}
+
+/* Can't be used right now */
+#hotbar.nexus-hotbar .nex-slot.depleted img {
+  filter: grayscale(1) brightness(0.55);
+}
+
+/* Highlighting */
+#hotbar.nexus-hotbar .nex-grid.filtering .nex-slot.dim {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+#hotbar.nexus-hotbar .nex-slot[data-match-act="action"] { --nex-match: var(--nex-action); }
+#hotbar.nexus-hotbar .nex-slot[data-match-act="bonus"] { --nex-match: var(--nex-bonus); }
+#hotbar.nexus-hotbar .nex-slot[data-match-act="reaction"] { --nex-match: var(--nex-reaction); }
+
+#hotbar.nexus-hotbar .nex-grid.filtering .nex-slot.match {
+  border-color: var(--nex-match);
+  box-shadow: 0 0 8px var(--nex-match), 0 0 4px #000;
+}

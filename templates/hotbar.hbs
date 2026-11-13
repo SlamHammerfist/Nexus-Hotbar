@@ -1,0 +1,188 @@
+<aside id="hotbar">
+    <div class="nex-controls nex-controls-left" data-tooltip-direction="LEFT">
+        <button type="button" class="ui-control fa-solid fa-volume icon" data-action="mute" data-tooltip
+                aria-label="{{localize "HOTBAR.ACTIONS.Mute"}}"></button>
+        <button type="button" class="ui-control fa-solid fa-bars icon" data-action="menu" data-tooltip
+                aria-label="{{localize "HOTBAR.ACTIONS.Menu"}}"></button>
+    </div>
+
+    {{#if (and stats show.stats)}}
+    <div class="nex-stats" data-tooltip-direction="UP">
+        {{#each stats as |stat|}}
+        <div class="nex-stat {{stat.cssClass}}" role="button" data-action="nexStat" data-index="{{stat.index}}"
+             data-tooltip-text="{{stat.tooltip}}" aria-label="{{stat.tooltip}}">
+            <i class="{{stat.icon}} nex-stat-icon" inert></i>
+            {{#if stat.value}}<span class="nex-stat-value">{{stat.value}}</span>{{/if}}
+            {{#if stat.short}}<span class="nex-stat-label">{{stat.short}}</span>{{/if}}
+        </div>
+        {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if (and portrait show.portrait)}}
+    <div class="nex-portrait {{portrait.cssClass}}" role="button" data-action="nexPortrait" data-tooltip-direction="UP"
+         data-tooltip-html="<strong>{{portrait.name}}</strong><br>Click: open sheet<br>Right-click: roll checks, saves, skills"
+         aria-label="Open {{portrait.name}}'s sheet">
+        <img src="{{portrait.img}}" alt="" draggable="false">
+        {{#if portrait.death}}
+        <div class="nex-death">
+            <div class="nex-death-row success">
+                {{#each portrait.death.success as |filled|}}
+                <button type="button" class="nex-death-pip {{#if filled}}filled{{/if}}" data-action="nexDeathPip"
+                        data-kind="success" data-index="{{@index}}" data-tooltip-text="Success"
+                        aria-label="Death save success {{@index}}"><i class="fa-solid fa-check" inert></i></button>
+                {{/each}}
+            </div>
+            {{#if portrait.death.dead}}
+            <div class="nex-death-status dead" data-tooltip-text="Dead"><i class="fa-solid fa-skull-crossbones" inert></i></div>
+            {{else if portrait.death.stable}}
+            <div class="nex-death-status stable" data-tooltip-text="Stable"><i class="fa-solid fa-heart-pulse" inert></i></div>
+            {{else}}
+            <button type="button" class="nex-death-roll" data-action="nexDeathRoll"
+                    data-tooltip-text="Roll Death Save" aria-label="Roll Death Save">
+                <i class="fa-solid fa-skull" inert></i>
+            </button>
+            {{/if}}
+            <div class="nex-death-row failure">
+                {{#each portrait.death.failure as |filled|}}
+                <button type="button" class="nex-death-pip {{#if filled}}filled{{/if}}" data-action="nexDeathPip"
+                        data-kind="failure" data-index="{{@index}}" data-tooltip-text="Failure"
+                        aria-label="Death save failure {{@index}}"><i class="fa-solid fa-xmark" inert></i></button>
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+        {{#if portrait.hp}}
+        <div class="nex-hp">
+            <div class="nex-hp-bar {{portrait.hp.tempmaxClass}}" style="--bar-percentage: {{portrait.hp.pct}}%;"
+                 data-tooltip-text="Hit Points: click to edit (+5 or -5 to adjust)">
+                <input type="text" class="nex-hp-input" name="hp" value="{{portrait.hp.value}}"
+                       aria-label="Hit Points" autocomplete="off" hidden>
+                <span class="nex-hp-label">
+                    <span class="value">{{portrait.hp.value}}</span>
+                    <span class="separator">&sol;</span>
+                    <span class="max">{{portrait.hp.max}}</span>
+                    {{#if portrait.hp.tempmax}}<span class="bonus">{{portrait.hp.tempmax}}</span>{{/if}}
+                </span>
+            </div>
+            <div class="nex-hp-tmp" data-tooltip-text="Temporary Hit Points">
+                <input type="text" class="nex-hp-input" name="temp" placeholder="TMP" autocomplete="off"
+                       value="{{#if portrait.hp.temp}}{{portrait.hp.temp}}{{/if}}" aria-label="Temporary Hit Points">
+            </div>
+        </div>
+        {{/if}}
+    </div>
+    {{/if}}
+
+    {{#if (and loadout show.loadout)}}
+    <div class="nex-loadout" data-tooltip-direction="UP">
+        {{> nexLoadoutSlot loadout.top}}
+        {{> nexLoadoutSlot loadout.middle}}
+        {{> nexLoadoutSlot loadout.unarmed extra="unarmed"}}
+    </div>
+    {{/if}}
+
+    <div class="nex-main">
+        <header class="nex-header">
+            {{#if actor}}
+            {{#if show.passives}}
+            <div class="nex-passives" data-tooltip-direction="UP">
+                <button type="button" class="nex-passives-choose" data-action="nexChoosePassives"
+                        data-tooltip-text="Choose Passive Features" aria-label="Choose Passive Features">
+                    <i class="fa-solid fa-shield-halved" inert></i>
+                </button>
+                {{#each passives as |passive|}}
+                <div class="nex-passive" role="button" data-action="nexPassive" data-id="{{passive.id}}"
+                     data-uuid="{{passive.uuid}}" data-tooltip-text="{{passive.name}}" aria-label="{{passive.name}}">
+                    <img src="{{passive.img}}" alt="" draggable="false">
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+            <div class="nex-tabs" data-tooltip-direction="UP">
+                {{#each tabs as |tab|}}
+                <button type="button" class="nex-tab {{#if tab.active}}active{{/if}}" data-action="nexTab"
+                        data-tab="{{tab.id}}" data-tooltip-text="{{tab.label}}" aria-label="{{tab.label}}"
+                        aria-pressed="{{#if tab.active}}true{{else}}false{{/if}}">
+                    <i class="{{tab.icon}}" inert></i>
+                </button>
+                {{/each}}
+            </div>
+            {{else}}
+            <span class="nex-title">Macros</span>
+            <span class="nex-hint">Select a token to show its actions</span>
+            {{/if}}
+            {{#if (and actor show.highlights)}}
+            <div class="nex-highlights" data-tooltip-direction="UP">
+                {{#each highlights as |hl|}}
+                <button type="button" class="nex-highlight {{#if hl.active}}active{{/if}}" data-action="nexHighlight"
+                        data-type="{{hl.id}}" data-tooltip-text="{{hl.label}}s"
+                        aria-label="{{hl.label}}s"
+                        aria-pressed="{{#if hl.active}}true{{else}}false{{/if}}"><i class="{{hl.icon}}" inert></i></button>
+                {{/each}}
+            </div>
+            {{/if}}
+            {{#if (and effects.length show.effects)}}
+            <div class="nex-effects" data-tooltip-direction="UP">
+                {{#each effects as |effect|}}
+                <div class="nex-effect" data-uuid="{{effect.uuid}}" aria-label="{{effect.name}}"
+                     data-tooltip-html="<strong>{{effect.name}}</strong><br>Right-click to remove{{#if @root.confirmEffects}} (asks first){{/if}}">
+                    <img src="{{effect.img}}" alt="" draggable="false">
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+        </header>
+
+
+        <div class="nex-grid {{#if filtering}}filtering{{/if}}" data-tooltip-direction="UP">
+            {{#each rows as |row|}}
+            <div class="nex-row" data-row="{{row.index}}">
+                {{#each row.cells as |cell|}}
+                <div class="nex-slot {{cell.cssClass}}" role="button" data-action="nexUse"
+                     data-index="{{cell.index}}" data-row="{{row.index}}" aria-label="{{cell.ariaLabel}}"
+                     {{#if cell.act}}data-act="{{cell.act}}"{{/if}}
+                     {{#if cell.matchAct}}data-match-act="{{cell.matchAct}}"{{/if}}
+                     {{#if cell.uuid}}data-uuid="{{cell.uuid}}"{{/if}}
+                     {{#if cell.name}}data-tooltip-text="{{cell.name}}"{{/if}}>
+                    {{#if cell.img}}<img src="{{cell.img}}" alt="" draggable="false">{{/if}}
+                    {{#if cell.act}}<span class="nex-pip"></span>{{/if}}
+                    {{#if cell.level}}<span class="nex-level">{{cell.level}}</span>{{/if}}
+                    {{#if cell.count}}<span class="nex-count">{{cell.count}}</span>{{/if}}
+                </div>
+                {{/each}}
+            </div>
+            {{/each}}
+        </div>
+    </div>
+
+    <div class="nex-controls nex-controls-right" data-tooltip-direction="RIGHT">
+        {{#if show.controls}}
+        {{#if combat}}
+        {{#if (eq combat.state "roll")}}
+        <button type="button" class="ui-control fa-solid fa-dice-d20 icon nex-combat roll" data-action="nexInitiative"
+                data-tooltip-text="Roll Initiative" aria-label="Roll Initiative"></button>
+        {{else if (eq combat.state "turn")}}
+        <button type="button" class="ui-control fa-solid fa-forward-step icon nex-combat turn" data-action="nexEndTurn"
+                data-tooltip-text="End Turn" aria-label="End Turn"></button>
+        {{else}}
+        <button type="button" class="ui-control fa-solid fa-hourglass-half icon nex-combat waiting" aria-disabled="true"
+                data-tooltip-text="{{combat.tooltip}}" aria-label="{{combat.tooltip}}"></button>
+        {{/if}}
+        {{else}}
+        <button type="button" class="ui-control fa-solid fa-utensils icon nex-rest" data-action="nexRest" data-rest="short"
+                data-tooltip-text="Short Rest" aria-label="Short Rest" {{#unless actor}}disabled{{/unless}}></button>
+        <button type="button" class="ui-control fa-solid fa-bed icon nex-rest" data-action="nexRest" data-rest="long"
+                data-tooltip-text="Long Rest" aria-label="Long Rest" {{#unless actor}}disabled{{/unless}}></button>
+        {{/if}}
+        {{/if}}
+        <button type="button" class="ui-control fa-solid fa-plus icon" data-action="nexRow" data-delta="1"
+                data-tooltip-text="Add Row" aria-label="Add Row" {{#unless canAddRow}}disabled{{/unless}}></button>
+        <button type="button" class="ui-control fa-solid fa-lock-open icon" data-action="lock" data-tooltip
+                aria-label="{{localize "HOTBAR.ACTIONS.Lock"}}"></button>
+        <button type="button" class="ui-control fa-solid fa-minus icon" data-action="nexRow" data-delta="-1"
+                data-tooltip-text="Remove Row" aria-label="Remove Row" {{#unless canRemoveRow}}disabled{{/unless}}></button>
+        <button type="button" class="ui-control fa-solid fa-gear icon" data-action="nexSettings"
+                data-tooltip-text="Nexus Hotbar Settings" aria-label="Nexus Hotbar Settings"></button>
+    </div>
+</aside>
