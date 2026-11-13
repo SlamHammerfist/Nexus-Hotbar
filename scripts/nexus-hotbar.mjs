@@ -30,7 +30,7 @@ import { activatePortrait, onDeathPip, onDeathRoll, onPortrait, preparePortrait 
 import { onStatClick, prepareStats, statMenuOptions } from "./stats.mjs";
 import { DEFAULT_ACCENT, onSettings, registerSettings, validColor } from "./settings.mjs";
 import {
-  autoFill, clearSlots, onDragEnd, onDragOver, onDragStart, onDropSlot, onHighlight, onRow, onTab, onUse,
+  autoFill, clearSlots, onDragEnd, onDragOver, onDragStart, onDropSlot, onClearHighlight, onHighlight, onRow, onTab, onUse,
   prepareSlots, readBar, resolveEntry, slotMenuOptions, useDocument
 } from "./slots.mjs";
 
@@ -42,6 +42,7 @@ class NexusHotbar extends foundry.applications.ui.Hotbar {
       nexUse: onUse,
       nexTab: onTab,
       nexHighlight: onHighlight,
+      nexClearHighlight: onClearHighlight,
       nexRow: onRow,
       nexPassive: onPassive,
       nexChoosePassives: onChoosePassives,
@@ -134,9 +135,9 @@ class NexusHotbar extends foundry.applications.ui.Hotbar {
     return Object.fromEntries(Object.keys(SECTIONS).map(key => [key, saved[key] !== false]));
   }
 
-  /** Ask before right-click removes an effect. Saved on the actor; off by default. */
+  /** Ask before right-click removes an effect. Saved on the actor; on by default. */
   get confirmEffectRemoval() {
-    return !!this.layoutDoc.getFlag(MODULE, "bar")?.layout?.confirmEffects;
+    return this.layoutDoc.getFlag(MODULE, "bar")?.layout?.confirmEffects !== false;
   }
 
   /** Slot size in pixels, saved on the actor (or user). */

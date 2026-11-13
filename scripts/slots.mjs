@@ -287,6 +287,13 @@ export async function onHighlight(event, target) {
   return this.render();
 }
 
+/** Turn every Action / Bonus Action / Reaction highlight off. @this {NexusHotbar} */
+export async function onClearHighlight(event, target) {
+  if ( !this.highlight.size ) return;
+  this.highlight.clear();
+  return this.render();
+}
+
 /** + / - row buttons. @this {NexusHotbar} */
 export async function onRow(event, target) {
   if ( this.guardLocked() ) return;

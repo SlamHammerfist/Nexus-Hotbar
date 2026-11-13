@@ -21,18 +21,18 @@ export const SECTIONS = {
 /** Most rows a tab can have. */
 export const MAX_ROWS = 6;
 
-/** The three tabs shown for an actor. */
+/** The three tabs shown for an actor (same icons as the dnd5e character sheet). */
 export const TABS = {
-  inventory: { label: "Inventory", icon: "fa-solid fa-sack" },
-  features: { label: "Features", icon: "fa-solid fa-hand-fist" },
-  spells: { label: "Spells", icon: "fa-solid fa-wand-sparkles" }
+  inventory: { label: "Inventory", svg: "systems/dnd5e/icons/svg/backpack.svg" },
+  features: { label: "Features", icon: "fa-solid fa-list" },
+  spells: { label: "Spells", icon: "fa-solid fa-book" }
 };
 
 /** Activation types that can be highlighted, in display order. */
 export const ACTIVATIONS = {
-  action: { label: "Action", icon: "fa-solid fa-circle" },
-  bonus: { label: "Bonus Action", icon: "fa-solid fa-triangle" },
-  reaction: { label: "Reaction", icon: "fa-solid fa-arrows-rotate" }
+  action: { label: "Action", icon: "fa-solid fa-hand-fist" },
+  bonus: { label: "Bonus Action", icon: "fa-solid fa-circle-plus" },
+  reaction: { label: "Reaction", icon: "fa-solid fa-bolt" }
 };
 
 /** CSS class and options for dnd5e's rich item tooltip. */

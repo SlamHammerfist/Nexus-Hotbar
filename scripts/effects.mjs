@@ -28,7 +28,7 @@ export function activateEffects(bar) {
       const esc = Handlebars.escapeExpression;
       const proceed = await foundry.applications.api.DialogV2.confirm({
         window: { title: "Remove Effect", icon: "fa-solid fa-xmark" },
-        content: `<p>Remove <strong>${esc(effect.name)}</strong> from ${esc(bar.actor?.name ?? "the actor")}?</p>`,
+        content: `<p>Are you sure you want to remove <strong>${esc(effect.name)}</strong> from ${esc(bar.actor?.name ?? "the actor")}?</p>`,
         modal: true
       });
       if ( !proceed ) return;

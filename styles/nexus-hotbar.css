@@ -584,6 +584,9 @@
 #hotbar.nexus-hotbar .nex-tab {
   color: var(--color-light-3, #ccc);
   opacity: 0.5;
+  /* SVG tab icons (dnd5e-icon) follow the text colour like the font icons */
+  --icon-fill: currentColor;
+  --icon-size: 1em;
 }
 
 #hotbar.nexus-hotbar .nex-tab:hover {
@@ -593,12 +596,20 @@
 #hotbar.nexus-hotbar .nex-tab.active {
   color: var(--nex-accent);
   opacity: 1;
-  filter: drop-shadow(0 0 4px var(--nex-accent));
+}
+
+/* No circle or ring behind a clicked / selected button (core focus and active styles) */
+#hotbar.nexus-hotbar :is(.nex-tab, .nex-highlight):is(:focus, :focus-visible, :active, .active) {
+  outline: none;
+  border: none;
+  background: none;
+  box-shadow: none;
 }
 
 #hotbar.nexus-hotbar .nex-highlight[data-type="action"] { --nex-hl: var(--nex-action); }
 #hotbar.nexus-hotbar .nex-highlight[data-type="bonus"] { --nex-hl: var(--nex-bonus); }
 #hotbar.nexus-hotbar .nex-highlight[data-type="reaction"] { --nex-hl: var(--nex-reaction); }
+#hotbar.nexus-hotbar .nex-highlight-clear { --nex-hl: var(--color-light-3, #ccc); }
 
 /* Just the symbol: no box around each button */
 #hotbar.nexus-hotbar .nex-highlight,
@@ -625,6 +636,12 @@
 #hotbar.nexus-hotbar .nex-highlight.active {
   opacity: 1;
   filter: drop-shadow(0 0 4px var(--nex-hl));
+}
+
+/* Remove Filter: greyed out until a filter is on */
+#hotbar.nexus-hotbar .nex-highlight-clear:disabled {
+  opacity: 0.25;
+  cursor: default;
 }
 
 /* Active conditions / timed effects */
@@ -887,6 +904,11 @@
   align-items: center;
   gap: 6px;
   font-size: var(--font-size-13, 13px);
+}
+
+/* A checkbox on its own gets the whole row instead of half */
+.nexus-settings-dialog .nex-settings-checks label:only-child {
+  grid-column: 1 / -1;
 }
 
 .nexus-settings-dialog .nex-settings-heading {

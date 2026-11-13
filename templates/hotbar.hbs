@@ -104,7 +104,7 @@
                 <button type="button" class="nex-tab {{#if tab.active}}active{{/if}}" data-action="nexTab"
                         data-tab="{{tab.id}}" data-tooltip-text="{{tab.label}}" aria-label="{{tab.label}}"
                         aria-pressed="{{#if tab.active}}true{{else}}false{{/if}}">
-                    <i class="{{tab.icon}}" inert></i>
+                    {{#if tab.svg}}<dnd5e-icon src="{{tab.svg}}" inert></dnd5e-icon>{{else}}<i class="{{tab.icon}}" inert></i>{{/if}}
                 </button>
                 {{/each}}
             </div>
@@ -120,6 +120,9 @@
                         aria-label="{{hl.label}}s"
                         aria-pressed="{{#if hl.active}}true{{else}}false{{/if}}"><i class="{{hl.icon}}" inert></i></button>
                 {{/each}}
+                <button type="button" class="nex-highlight nex-highlight-clear" data-action="nexClearHighlight"
+                        data-tooltip-text="Remove Filter" aria-label="Remove Filter"
+                        {{#unless filtering}}disabled{{/unless}}><i class="fa-solid fa-circle-xmark" inert></i></button>
             </div>
             {{/if}}
             {{#if (and effects.length show.effects)}}

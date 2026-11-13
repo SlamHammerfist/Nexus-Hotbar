@@ -34,7 +34,7 @@ export function primaryActivation(types) {
   return Object.keys(ACTIVATIONS).find(t => types.has(t)) ?? null;
 }
 
-const INVENTORY_ORDER = { weapon: 0, equipment: 1, consumable: 2, tool: 3 };
+const INVENTORY_ORDER = { equipment: 0, consumable: 1, tool: 2 };
 const ACTIVATION_ORDER = { action: 0, bonus: 1, reaction: 2 };
 const FEATURE_ORDER = { class: 0, subclass: 1, race: 2, species: 2, background: 3, feat: 4 };
 
@@ -48,8 +48,9 @@ export function autoFillCandidates(actor, tab) {
     case "inventory":
       return items
         .filter(i => {
-          if ( !["weapon", "equipment", "consumable", "tool", "loot", "container"].includes(i.type) ) return false;
-          if ( ["weapon", "equipment"].includes(i.type) ) return !!i.system.equipped;
+          // Weapons live in the loadout column, so auto-fill never adds them
+          if ( !["equipment", "consumable", "tool", "loot", "container"].includes(i.type) ) return false;
+          if ( i.type === "equipment" ) return !!i.system.equipped;
           return true;
         })
         .sort((a, b) => ((INVENTORY_ORDER[a.type] ?? 9) - (INVENTORY_ORDER[b.type] ?? 9)) || byName(a, b));
