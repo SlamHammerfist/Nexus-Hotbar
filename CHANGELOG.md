@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.1
+
+### Added
+- **Remove Filter** button that clears all highlights.
+
+### Changed
+- Auto-fill no longer adds weapons; they live in the loadout column.
+- Tabs use the dnd5e sheet icons (backpack, list, book), with no circle behind the selected tab.
+- Filter icons: fist (Action), circle-plus (Bonus Action), bolt (Reaction).
+- Removing a condition or timed effect asks for confirmation by default.
+- A lone checkbox in the settings dialog now spans the full row.
+
 ## 2.0.0
 
 Complete rewrite for Foundry VTT v14 and D&D 5e 5.0+. Layouts from 1.x are not carried over.
