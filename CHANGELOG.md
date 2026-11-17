@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.0.0
+
+**Breaking:** Nexus Hotbar is now a system-agnostic hub. Everything specific to D&D 5e has moved to the new **Nexus Hotbar for D&D 5e** module (`nexus-hotbar-dnd5e`). D&D 5e users need to install and enable it alongside this module. Saved layouts, tabs and settings carry over unchanged.
+
+### Added
+- System module API: `Hooks.once("nexusHotbar.ready", api => api.registerSystem({ id, ... }))`, also at `game.modules.get("nexus-hotbar").api`. System modules supply tabs, activation types, auto-fill picks, slot badges, item use, tooltips, passives, a loadout column, the portrait's health bar and death saves, stat boxes, rest buttons and the initiative roll. See the README.
+- Without a system module the bar shows one **Items** tab of the character's items, plus the macro bar, active effects, combat controls and the portrait image.
+- Tab icons can be a Font Awesome icon, an image drawn in the text colour, or custom markup.
+
+### Changed
+- Sections that the system module doesn't supply are hidden, along with their show/hide checkbox; the **Character** settings tab only appears when there are stat boxes.
+- Starting tab choices come from the system module's tabs.
+- Activation colours (slot dot, filter highlight) come from the system module.
+- Health bar colours use `--nex-hp-*` CSS variables with built-in fallbacks.
+- No longer declares the dnd5e system as a relationship.
+
 ## 2.0.1
 
 ### Added

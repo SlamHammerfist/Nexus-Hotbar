@@ -3,8 +3,9 @@
  * actor being shown (or the user with no actor), so changes are shared with the GM and players.
  */
 
-import { MODULE, SECTIONS } from "./constants.mjs";
-import { STAT_COUNT, readStats, statOptions, writeStats } from "./stats.mjs";
+import { MODULE } from "./constants.mjs";
+import { readStats, statCount, statOptions, writeStats } from "./stats.mjs";
+import { activeSystem, availableSections, startTabs } from "./system.mjs";
 
 /** Register settings. Called during init. */
 export function registerSettings() {
@@ -30,12 +31,12 @@ export function registerSettings() {
   });
 
   // Which tab a bar opens on: the last one you used, or always the same one. Per user.
+  // The choices depend on the system module's tabs (see startTabs), so they're checked in the dialog.
   game.settings.register(MODULE, "startTab", {
     name: "Starting Tab",
     scope: "user",
     config: false,
     type: String,
-    choices: START_TABS,
     default: "last",
     onChange: () => ui.hotbar?.render()
   });
@@ -95,14 +96,6 @@ export const IDLE_FADES = {
   30: "After 30 seconds"
 };
 
-/** Options for which tab a bar opens on. */
-export const START_TABS = {
-  last: "Remember last tab",
-  inventory: "Always Inventory",
-  features: "Always Features",
-  spells: "Always Spells"
-};
-
 /** Options for the your-turn alert. */
 export const TURN_ALERTS = {
   off: "Off",
@@ -122,7 +115,7 @@ let lastSettingsTab = "general";
 /** Show / hide checkboxes for each section of the bar. */
 function sectionFields(shown) {
   let html = `<h4 class="nex-settings-heading">Show</h4><div class="nex-settings-checks">`;
-  for ( const [key, label] of Object.entries(SECTIONS) ) {
+  for ( const [key, label] of Object.entries(availableSections()) ) {
     html += `<label class="checkbox">
       <input type="checkbox" name="show_${key}" ${shown[key] ? "checked" : ""}> ${label}
     </label>`;
@@ -137,7 +130,7 @@ function statFields(actor) {
   const options = statOptions(actor);
   const current = readStats(actor);
   let html = `<h4 class="nex-settings-heading">Stat Boxes</h4>`;
-  for ( let i = 0; i < STAT_COUNT; i++ ) {
+  for ( let i = 0; i < statCount(); i++ ) {
     let opts = `<option value="">None</option>`;
     let group = null;
     for ( const opt of options ) {
@@ -171,6 +164,8 @@ export async function onSettings() {
   const slotSize = this.slotSize;
   const turnAlert = game.settings.get(MODULE, "turnAlert");
   const startTab = game.settings.get(MODULE, "startTab");
+  const START_TABS = startTabs();
+  const hasStats = !!(actor && activeSystem()?.stats);
   const barScale = game.settings.get(MODULE, "barScale");
   const accentColor = validColor(game.settings.get(MODULE, "accentColor")) ?? DEFAULT_ACCENT;
   const idleFade = String(game.settings.get(MODULE, "idleFade"));
@@ -252,15 +247,15 @@ export async function onSettings() {
     </div>
     ${actor ? sectionFields(this.sections) : ""}`;
 
-  // Character: actor-specific pieces
-  const character = actor ? `
+  // Character: actor-specific pieces (only stat boxes for now, so only with a system that has them)
+  const character = hasStats ? `
     <p class="hint nex-settings-scope"><i class="fa-solid fa-users"></i> Shared for ${owner}</p>
     ${statFields(actor)}` : "";
 
   const tabs = [
     { id: "general", label: "General", icon: "fa-solid fa-sliders", html: general },
     { id: "appearance", label: "Appearance", icon: "fa-solid fa-palette", html: appearance },
-    ...(actor ? [{ id: "character", label: "Character", icon: "fa-solid fa-user-shield", html: character }] : [])
+    ...(hasStats ? [{ id: "character", label: "Character", icon: "fa-solid fa-user-shield", html: character }] : [])
   ];
   const open = tabs.some(t => t.id === lastSettingsTab) ? lastSettingsTab : "general";
   const content = `
@@ -306,8 +301,8 @@ export async function onSettings() {
           return {
             columns: Number(els.columns.value),
             slotSize: Number(els.slotSize.value),
-            show: els.show_stats
-              ? Object.fromEntries(Object.keys(SECTIONS).map(key => [key, !!els[`show_${key}`]?.checked]))
+            show: els.show_effects
+              ? Object.fromEntries(Object.keys(availableSections()).map(key => [key, !!els[`show_${key}`]?.checked]))
               : null,
             confirmEffects: els.confirmEffects ? els.confirmEffects.checked : null,
             turnAlert: els.turnAlert?.value ?? null,
@@ -316,7 +311,7 @@ export async function onSettings() {
             accentColor: els.accentColor?.value ?? null,
             idleFade: els.idleFade?.value ?? null,
             idleOpacity: Number(els.idleOpacity?.value),
-            stats: els.res0 ? Array.from({ length: STAT_COUNT }, (_, i) => els[`res${i}`]?.value || null) : null
+            stats: els.res0 ? Array.from({ length: statCount() }, (_, i) => els[`res${i}`]?.value || null) : null
           };
         }
       },
@@ -329,7 +324,8 @@ export async function onSettings() {
   const cols = Math.clamp(Math.round(result.columns) || columns, 5, 20);
   const size = Math.clamp(Math.round(result.slotSize / 2) * 2 || slotSize, 32, 72);
   const layout = { columns: cols, slotSize: size };
-  if ( result.show ) layout.show = result.show;
+  // Sections this system doesn't have keep whatever was saved for them (e.g. by another system module)
+  if ( result.show ) layout.show = { ...(doc.getFlag(MODULE, "bar")?.layout?.show ?? {}), ...result.show };
   if ( result.confirmEffects !== null ) layout.confirmEffects = result.confirmEffects;
   const scale = Math.clamp(Math.round((result.barScale || barScale) / 5) * 5, 50, 150);
   if ( scale !== barScale ) await game.settings.set(MODULE, "barScale", scale);

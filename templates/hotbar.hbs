@@ -21,7 +21,7 @@
 
     {{#if (and portrait show.portrait)}}
     <div class="nex-portrait {{portrait.cssClass}}" role="button" data-action="nexPortrait" data-tooltip-direction="UP"
-         data-tooltip-html="<strong>{{portrait.name}}</strong><br>Click: open sheet<br>Right-click: roll checks, saves, skills"
+         data-tooltip-html="<strong>{{portrait.name}}</strong><br>Click: open sheet{{#if portrait.rollHint}}<br>Right-click: {{portrait.rollHint}}{{/if}}"
          aria-label="Open {{portrait.name}}'s sheet">
         <img src="{{portrait.img}}" alt="" draggable="false">
         {{#if portrait.death}}
@@ -76,9 +76,13 @@
 
     {{#if (and loadout show.loadout)}}
     <div class="nex-loadout" data-tooltip-direction="UP">
-        {{> nexLoadoutSlot loadout.top}}
-        {{> nexLoadoutSlot loadout.middle}}
-        {{> nexLoadoutSlot loadout.unarmed extra="unarmed"}}
+        {{#each loadout as |box|}}
+        <div class="nex-loadout-slot {{box.cssClass}}" role="button" data-action="nexLoadoutUse"
+             data-slot="{{box.slot}}" {{#if box.uuid}}data-uuid="{{box.uuid}}"{{/if}}
+             data-tooltip-text="{{box.name}}" aria-label="{{box.name}}">
+            <img src="{{box.img}}" alt="" draggable="false">
+        </div>
+        {{/each}}
     </div>
     {{/if}}
 
@@ -104,7 +108,7 @@
                 <button type="button" class="nex-tab {{#if tab.active}}active{{/if}}" data-action="nexTab"
                         data-tab="{{tab.id}}" data-tooltip-text="{{tab.label}}" aria-label="{{tab.label}}"
                         aria-pressed="{{#if tab.active}}true{{else}}false{{/if}}">
-                    {{#if tab.svg}}<dnd5e-icon src="{{tab.svg}}" inert></dnd5e-icon>{{else}}<i class="{{tab.icon}}" inert></i>{{/if}}
+                    {{#if tab.html}}{{{tab.html}}}{{else if tab.img}}<span class="nex-tab-img" style="--nex-tab-img: url('{{tab.img}}');" inert></span>{{else}}<i class="{{tab.icon}}" inert></i>{{/if}}
                 </button>
                 {{/each}}
             </div>
@@ -117,6 +121,7 @@
                 {{#each highlights as |hl|}}
                 <button type="button" class="nex-highlight {{#if hl.active}}active{{/if}}" data-action="nexHighlight"
                         data-type="{{hl.id}}" data-tooltip-text="{{hl.label}}s"
+                        {{#if hl.color}}style="--nex-hl: {{hl.color}};"{{/if}}
                         aria-label="{{hl.label}}s"
                         aria-pressed="{{#if hl.active}}true{{else}}false{{/if}}"><i class="{{hl.icon}}" inert></i></button>
                 {{/each}}
@@ -146,6 +151,7 @@
                      data-index="{{cell.index}}" data-row="{{row.index}}" aria-label="{{cell.ariaLabel}}"
                      {{#if cell.act}}data-act="{{cell.act}}"{{/if}}
                      {{#if cell.matchAct}}data-match-act="{{cell.matchAct}}"{{/if}}
+                     {{#if (or cell.actColor cell.matchColor)}}style="{{#if cell.actColor}}--nex-act: {{cell.actColor}};{{/if}}{{#if cell.matchColor}} --nex-match: {{cell.matchColor}};{{/if}}"{{/if}}
                      {{#if cell.uuid}}data-uuid="{{cell.uuid}}"{{/if}}
                      {{#if cell.name}}data-tooltip-text="{{cell.name}}"{{/if}}>
                     {{#if cell.img}}<img src="{{cell.img}}" alt="" draggable="false">{{/if}}
@@ -173,10 +179,10 @@
                 data-tooltip-text="{{combat.tooltip}}" aria-label="{{combat.tooltip}}"></button>
         {{/if}}
         {{else}}
-        <button type="button" class="ui-control fa-solid fa-utensils icon nex-rest" data-action="nexRest" data-rest="short"
-                data-tooltip-text="Short Rest" aria-label="Short Rest" {{#unless actor}}disabled{{/unless}}></button>
-        <button type="button" class="ui-control fa-solid fa-bed icon nex-rest" data-action="nexRest" data-rest="long"
-                data-tooltip-text="Long Rest" aria-label="Long Rest" {{#unless actor}}disabled{{/unless}}></button>
+        {{#each rests as |rest|}}
+        <button type="button" class="ui-control {{rest.icon}} icon nex-rest" data-action="nexRest" data-rest="{{rest.id}}"
+                data-tooltip-text="{{rest.label}}" aria-label="{{rest.label}}" {{#unless @root.actor}}disabled{{/unless}}></button>
+        {{/each}}
         {{/if}}
         {{/if}}
         <button type="button" class="ui-control fa-solid fa-plus icon" data-action="nexRow" data-delta="1"

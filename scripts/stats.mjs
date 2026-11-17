@@ -1,22 +1,24 @@
 /**
- * Stat column: three boxes to the left of the portrait, laid out like the loadout.
- * Each box shows one stat picked per actor: AC, speed, initiative, proficiency, spell save DC,
- * passive scores, any skill, ability check or saving throw. Clicking a rollable stat rolls it.
+ * Stat column: boxes to the left of the portrait, laid out like the loadout.
+ * Each box shows one stat picked per actor; clicking a rollable stat rolls it. Which stats exist
+ * and how to read them comes from the system module (`stats` in registerSystem); with none,
+ * the column doesn't show.
  *
  * Choices are stored per actor in actor.flags["nexus-hotbar"].bar.stats = [key, key, key].
- * Keys: "ac", "speed", "init", "prof", "spelldc", "passive:<skill>",
- *       "skill:<skill>", "check:<ability>", "save:<ability>".
  */
 
 import { MODULE } from "./constants.mjs";
+import { activeSystem } from "./system.mjs";
 
-export const STAT_COUNT = 3;
+/** The system's stat source, or null. */
+function source() {
+  return activeSystem()?.stats ?? null;
+}
 
-/** Shown until the player picks their own. */
-const DEFAULT_STATS = ["ac", "speed", "init"];
-
-const signed = n => (Number(n) >= 0 ? `+${Number(n)}` : String(Number(n)));
-const loc = label => (label ? _loc(label) : "");
+/** How many boxes the column has. */
+export function statCount() {
+  return Math.clamp(Number(source()?.count) || 3, 1, 6);
+}
 
 /* -------------------------------------------- */
 /*  Storage                                     */
@@ -24,17 +26,17 @@ const loc = label => (label ? _loc(label) : "");
 
 export function readStats(actor) {
   const saved = actor?.getFlag(MODULE, "bar")?.stats;
-  const keys = Array.isArray(saved) ? saved : DEFAULT_STATS;
-  return Array.from({ length: STAT_COUNT }, (_, i) => keys[i] ?? null);
+  const keys = Array.isArray(saved) ? saved : (source()?.defaults ?? []);
+  return Array.from({ length: statCount() }, (_, i) => keys[i] ?? null);
 }
 
 export async function writeStats(actor, keys) {
-  const stats = Array.from({ length: STAT_COUNT }, (_, i) => keys[i] || null);
+  const stats = Array.from({ length: statCount() }, (_, i) => keys[i] || null);
   await actor.update({ [`flags.${MODULE}.bar.stats`]: stats });
 }
 
 /* -------------------------------------------- */
-/*  Options                                     */
+/*  Options and reading                         */
 /* -------------------------------------------- */
 
 /**
@@ -43,130 +45,22 @@ export async function writeStats(actor, keys) {
  */
 export function statOptions(actor) {
   if ( !actor ) return [];
-  const sys = actor.system;
-  const options = [];
-  const add = (group, key, label) => options.push({ key, label, group });
-
-  add("Combat", "ac", "Armor Class");
-  if ( sys.attributes?.movement ) add("Combat", "speed", "Speed");
-  if ( sys.attributes?.init ) add("Combat", "init", "Initiative");
-  if ( sys.attributes?.prof !== undefined ) add("Combat", "prof", "Proficiency Bonus");
-  if ( sys.attributes?.spell?.dc ) add("Combat", "spelldc", "Spell Save DC");
-
-  const skills = Object.entries(CONFIG.DND5E?.skills ?? {})
-    .filter(([key]) => sys.skills?.[key])
-    .map(([key, cfg]) => [key, loc(cfg.label)])
-    .sort((a, b) => a[1].localeCompare(b[1], game.i18n.lang));
-  for ( const key of ["prc", "ins", "inv"] ) {
-    const label = skills.find(([k]) => k === key)?.[1];
-    if ( label ) add("Passive Scores", `passive:${key}`, `Passive ${label}`);
-  }
-  for ( const [key, label] of skills ) add("Skills", `skill:${key}`, label);
-
-  for ( const [key, cfg] of Object.entries(CONFIG.DND5E?.abilities ?? {}) ) {
-    if ( sys.abilities?.[key] ) add("Ability Checks", `check:${key}`, `${loc(cfg.label)} Check`);
-  }
-  for ( const [key, cfg] of Object.entries(CONFIG.DND5E?.abilities ?? {}) ) {
-    if ( sys.abilities?.[key] ) add("Saving Throws", `save:${key}`, `${loc(cfg.label)} Save`);
-  }
-  return options;
+  return source()?.options?.(actor) ?? [];
 }
-
-/* -------------------------------------------- */
-/*  Reading a stat                              */
-/* -------------------------------------------- */
 
 /**
  * Current value of one stat.
- * @returns {{label: string, short: string, icon: string, value: string, tooltip: string,
+ * @returns {{label: string, short: string, icon: string, value: string, tooltip?: string,
  *            roll?: Function}|null}
  */
 export function readStat(actor, key) {
   if ( !actor || !key ) return null;
-  const sys = actor.system;
-  const attrs = sys.attributes ?? {};
-  const [kind, id] = key.split(":");
-
-  switch ( kind ) {
-    case "ac": {
-      const ac = attrs.ac?.value;
-      if ( ac === undefined ) return null;
-      return { label: "Armor Class", short: "AC", icon: "fa-solid fa-shield-halved", value: String(ac) };
-    }
-
-    case "speed": {
-      const move = attrs.movement;
-      if ( !move ) return null;
-      const units = move.units || "ft";
-      const types = Object.entries(CONFIG.DND5E?.movementTypes ?? { walk: "Walk" })
-        .filter(([t]) => Number(move[t]) > 0)
-        .map(([t, cfg]) => `${loc(cfg?.label ?? cfg)} ${move[t]} ${units}`);
-      return { label: "Speed", short: units.toUpperCase(), icon: "fa-solid fa-person-running",
-        value: String(Number(move.walk) || 0),
-        tooltip: types.length ? `Speed: ${types.join(", ")}` : "Speed" };
-    }
-
-    case "init": {
-      if ( !attrs.init ) return null;
-      return { label: "Initiative", short: "INIT", icon: "fa-solid fa-bolt", value: signed(attrs.init.total ?? 0),
-        tooltip: "Initiative: click to roll", roll: event => actor.rollInitiativeDialog({ event }) };
-    }
-
-    case "prof": {
-      if ( attrs.prof === undefined ) return null;
-      return { label: "Proficiency Bonus", short: "PROF", icon: "fa-solid fa-graduation-cap",
-        value: signed(attrs.prof) };
-    }
-
-    case "spelldc": {
-      const dc = attrs.spell?.dc;
-      if ( !dc ) return null;
-      return { label: "Spell Save DC", short: "DC", icon: "fa-solid fa-wand-sparkles", value: String(dc) };
-    }
-
-    case "passive": {
-      const skill = sys.skills?.[id];
-      if ( !skill ) return null;
-      const name = loc(CONFIG.DND5E.skills[id]?.label);
-      return { label: `Passive ${name}`, short: `P.${id.toUpperCase()}`, icon: "fa-solid fa-eye",
-        value: String(skill.passive ?? (10 + (skill.total ?? 0))),
-        tooltip: `Passive ${name}: click to roll ${name}`,
-        roll: event => actor.rollSkill({ skill: id, event }) };
-    }
-
-    case "skill": {
-      const skill = sys.skills?.[id];
-      if ( !skill ) return null;
-      const name = loc(CONFIG.DND5E.skills[id]?.label);
-      return { label: name, short: id.toUpperCase(), icon: "fa-solid fa-dice-d20", value: signed(skill.total ?? 0),
-        tooltip: `${name}: click to roll`, roll: event => actor.rollSkill({ skill: id, event }) };
-    }
-
-    case "check": {
-      const ability = sys.abilities?.[id];
-      if ( !ability ) return null;
-      const name = loc(CONFIG.DND5E.abilities[id]?.label);
-      return { label: `${name} Check`, short: id.toUpperCase(), icon: "fa-solid fa-dice-d20",
-        value: signed(ability.mod ?? 0), tooltip: `${name} ${ability.value ?? ""}: click to roll a check`,
-        roll: event => actor.rollAbilityCheck({ ability: id, event }) };
-    }
-
-    case "save": {
-      const ability = sys.abilities?.[id];
-      if ( !ability ) return null;
-      const name = loc(CONFIG.DND5E.abilities[id]?.label);
-      const save = typeof ability.save === "object" ? ability.save?.value : ability.save;
-      return { label: `${name} Save`, short: `${id.toUpperCase()} SV`, icon: "fa-solid fa-shield",
-        value: signed(save ?? ability.mod ?? 0), tooltip: `${name} Save: click to roll`,
-        roll: event => actor.rollSavingThrow({ ability: id, event }) };
-    }
-  }
-  return null;
+  return source()?.read?.(actor, key) ?? null;
 }
 
 /** Context for the column, or null with no actor. */
 export function prepareStats(actor) {
-  if ( !actor ) return null;
+  if ( !actor || !source() ) return null;
   return readStats(actor).map((key, index) => {
     const stat = readStat(actor, key);
     if ( !stat ) {

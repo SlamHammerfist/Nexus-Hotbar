@@ -1,27 +1,28 @@
 /**
  * Nexus Hotbar
- * Replaces the core hotbar with a multi-row, tabbed action bar for D&D 5e.
+ * Replaces the core hotbar with a multi-row, tabbed action bar. Works with any game system;
+ * a system module adds the parts that need the system's data (see system.mjs).
  *
  * This file holds the hotbar application itself, startup, and the hooks that keep it
  * up to date. Each feature lives in its own file:
- *   constants.mjs  shared constants (tabs, activation types)
- *   items.mjs      dnd5e item helpers (activation types, auto-fill picks, passives)
+ *   constants.mjs  shared constants
+ *   system.mjs     system registry and the public API (registerSystem)
  *   slots.mjs      slot grid, tabs, rows, highlighting, auto-fill, drag and drop
- *   passives.mjs   passive features frame and chooser dialog
- *   loadout.mjs    weapon loadout column (main hand, off hand, unarmed strike)
- *   portrait.mjs   token portrait with health bar and death saves
- *   stats.mjs      stat column (AC, speed, skills, saves...) left of the portrait
+ *   passives.mjs   passive features frame and chooser dialog (system-supplied)
+ *   loadout.mjs    loadout column (system-supplied)
+ *   portrait.mjs   token portrait, plus the system's health bar and death saves
+ *   stats.mjs      stat column left of the portrait (system-supplied stats)
  *   effects.mjs    active conditions / timed effects
  *   combat.mjs     initiative / turn controls and rests
  *   settings.mjs   settings and the settings dialog
  */
 
-import { ITEM_TOOLTIP_CLASS, LAYOUT_DEFAULTS, MODULE, SECTIONS, TABS } from "./constants.mjs";
-import { alertTurn, applyTurnFlash, onEndTurn, onInitiative, onRest, prepareCombat } from "./combat.mjs";
-import { activateEffects, prepareEffects } from "./effects.mjs";
+import { LAYOUT_DEFAULTS, MODULE } from "./constants.mjs";
 import {
-  LOADOUT_SLOT_PARTIAL, loadoutMenuOptions, onDropLoadout, onLoadoutUse, prepareLoadout
-} from "./loadout.mjs";
+  alertTurn, applyTurnFlash, onEndTurn, onInitiative, onRest, prepareCombat, prepareRests
+} from "./combat.mjs";
+import { activateEffects, prepareEffects } from "./effects.mjs";
+import { loadoutMenuOptions, onDropLoadout, onLoadoutUse, prepareLoadout } from "./loadout.mjs";
 import {
   choosePassives, clearPassives, onChoosePassives, onDropPassive, onPassive, passiveMenuOptions,
   preparePassives, removePassive
@@ -31,8 +32,9 @@ import { onStatClick, prepareStats, statMenuOptions } from "./stats.mjs";
 import { DEFAULT_ACCENT, onSettings, registerSettings, validColor } from "./settings.mjs";
 import {
   autoFill, clearSlots, onDragEnd, onDragOver, onDragStart, onDropSlot, onClearHighlight, onHighlight, onRow, onTab, onUse,
-  prepareSlots, readBar, resolveEntry, slotMenuOptions, useDocument
+  prepareSlots, readBar, resolveEntry, slotMenuOptions
 } from "./slots.mjs";
+import { api, availableSections, defaultTab, getTabs, itemTooltip, useDocument } from "./system.mjs";
 
 class NexusHotbar extends foundry.applications.ui.Hotbar {
 
@@ -120,7 +122,7 @@ class NexusHotbar extends foundry.applications.ui.Hotbar {
     const tab = start === "last"
       ? game.user.getFlag(MODULE, "tabs")?.[key]
       : (this.sessionTabs.get(key) ?? start);
-    return tab in TABS ? tab : "inventory";
+    return tab in getTabs() ? tab : defaultTab();
   }
 
   /** Slots per row, saved on the actor (or user). */
@@ -129,10 +131,13 @@ class NexusHotbar extends foundry.applications.ui.Hotbar {
     return Math.clamp(value || LAYOUT_DEFAULTS.columns, 5, 20);
   }
 
-  /** Which sections are shown, saved on the actor (or user). Missing entries count as shown. */
+  /**
+   * Which sections are shown, saved on the actor (or user). Missing entries count as shown;
+   * sections the system module doesn't supply aren't listed.
+   */
   get sections() {
     const saved = this.layoutDoc.getFlag(MODULE, "bar")?.layout?.show ?? {};
-    return Object.fromEntries(Object.keys(SECTIONS).map(key => [key, saved[key] !== false]));
+    return Object.fromEntries(Object.keys(availableSections()).map(key => [key, saved[key] !== false]));
   }
 
   /** Ask before right-click removes an effect. Saved on the actor; on by default. */
@@ -234,6 +239,7 @@ class NexusHotbar extends foundry.applications.ui.Hotbar {
       loadout: prepareLoadout(actor),
       portrait: preparePortrait(actor),
       stats: prepareStats(actor),
+      rests: prepareRests(),
       slotSize: this.slotSize,
       scale: Math.clamp(Number(game.settings.get(MODULE, "barScale")) || 100, 50, 150) / 100,
       show: this.sections,
@@ -301,15 +307,22 @@ class NexusHotbar extends foundry.applications.ui.Hotbar {
       }
     }).bind(this.element);
 
-    // Use the dnd5e rich item tooltip when it's available
-    const loadingTooltip = globalThis.dnd5e?.utils?.loadingTooltip;
-    if ( loadingTooltip ) {
+    // The system's rich item tooltip, when it has one
+    if ( api.system?.tooltip ) {
       for ( const el of this.element.querySelectorAll(
         ".nex-slot[data-uuid], .nex-passive[data-uuid], .nex-loadout-slot[data-uuid]") ) {
+        let item = null;
+        try {
+          item = fromUuidSync(el.dataset.uuid);
+        } catch(err) {
+          continue;
+        }
+        const tip = itemTooltip(item);
+        if ( !tip?.html ) continue;
         delete el.dataset.tooltipText;
         Object.assign(el.dataset, {
-          tooltipHtml: loadingTooltip({ uuid: el.dataset.uuid }),
-          tooltipClass: ITEM_TOOLTIP_CLASS,
+          tooltipHtml: tip.html,
+          tooltipClass: tip.cssClass ?? "",
           tooltipDirection: "UP"
         });
       }
@@ -366,8 +379,22 @@ class NexusHotbar extends foundry.applications.ui.Hotbar {
 
 Hooks.once("init", () => {
   registerSettings();
-  Handlebars.registerPartial("nexLoadoutSlot", LOADOUT_SLOT_PARTIAL);
+  game.modules.get(MODULE).api = api;
   if ( game.settings.get(MODULE, "enabled") ) CONFIG.ui.hotbar = NexusHotbar;
+});
+
+Hooks.once("setup", () => {
+  /**
+   * Fires once the hub is ready for system modules to register, before the bar first renders.
+   * @param {object} api
+   */
+  Hooks.callAll("nexusHotbar.ready", api);
+});
+
+Hooks.once("ready", () => {
+  if ( !api.system ) {
+    console.info(`Nexus Hotbar | No system module for "${game.system.id}" is active, so the bar shows a basic Items tab.`);
+  }
 });
 
 /* Re-render when what the bar shows changes. */

@@ -6,8 +6,6 @@
   --nex-slot-size: 50px;
   --nex-gap: 4px;
   --nex-action: #4caf50;
-  --nex-bonus: #f39c12;
-  --nex-reaction: #b36bff;
   --nex-accent: var(--color-warm-2, #ff6400);
 
   display: flex;
@@ -317,13 +315,12 @@
 }
 
 /*
- * Hit point meter along the bottom of the portrait, styled after the dnd5e character sheet:
+ * Hit point meter along the bottom of the portrait (when the system supplies hit points):
  * dark track, green gradient fill, gold underline, "value / max", and a TMP box on the right.
+ * System modules can restyle it with --nex-hp-1 / --nex-hp-2 (fill), --nex-hp-gold (edges),
+ * --nex-hp-track, --nex-hp-font and --nex-hp-temp on #hotbar.nexus-hotbar.
  */
 #hotbar.nexus-hotbar .nex-hp {
-  --nex-hp-1: var(--dnd5e-color-hp-1, #1b4b29);
-  --nex-hp-2: var(--dnd5e-color-hp-2, #3ba55d);
-  --nex-hp-gold: var(--dnd5e-color-gold, #9f9275);
   position: absolute;
   left: 6px;
   right: 6px;
@@ -331,10 +328,10 @@
   display: flex;
   height: 22px;
   border-radius: 3px 3px 0 0;
-  border-bottom: 1px solid var(--nex-hp-gold);
-  background: var(--dnd5e-color-light-gray, #3d3d3d);
+  border-bottom: 1px solid var(--nex-hp-gold, #9f9275);
+  background: var(--nex-hp-track, #3d3d3d);
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-  font-family: var(--dnd5e-font-roboto, Roboto, sans-serif);
+  font-family: var(--nex-hp-font, Roboto, sans-serif);
   color: var(--color-text-light-0, #fff);
   overflow: hidden;
   cursor: default;
@@ -365,7 +362,7 @@
 #hotbar.nexus-hotbar .nex-hp-bar:hover,
 #hotbar.nexus-hotbar .nex-hp-tmp:hover,
 #hotbar.nexus-hotbar .nex-hp-input:focus {
-  box-shadow: inset 0 0 6px var(--nex-hp-gold);
+  box-shadow: inset 0 0 6px var(--nex-hp-gold, #9f9275);
 }
 
 #hotbar.nexus-hotbar .nex-hp-bar {
@@ -393,7 +390,7 @@
   width: calc(var(--bar-percentage) - 2px);
   max-width: calc(100% - 2px);
   border-radius: 2px;
-  background: linear-gradient(to right, var(--nex-hp-1) 0%, var(--nex-hp-2) 100%);
+  background: linear-gradient(to right, var(--nex-hp-1, #1b4b29) 0%, var(--nex-hp-2, #3ba55d) 100%);
   box-shadow: inset 0 1px 0 1px rgba(255, 255, 255, 0.4);
   transition: width 0.3s ease;
 }
@@ -433,8 +430,8 @@
   align-items: center;
   justify-content: center;
   width: 34px;
-  border-left: 1px dashed var(--nex-hp-gold);
-  color: var(--dnd5e-color-blue, cornflowerblue);
+  border-left: 1px dashed var(--nex-hp-gold, #9f9275);
+  color: var(--nex-hp-temp, cornflowerblue);
   font-size: 13px;
   font-weight: bold;
   text-shadow: 0 0 2px #000;
@@ -448,7 +445,7 @@
   text-shadow: none;
 }
 
-/* Weapon loadout column (left of the slots): main hand, off hand, unarmed strike */
+/* Loadout column (left of the slots), supplied by the system module */
 #hotbar.nexus-hotbar .nex-loadout {
   display: flex;
   flex-direction: column;
@@ -496,16 +493,6 @@
   padding: 20%;
   object-fit: contain;
   opacity: 0.35;
-}
-
-/* Two-handed weapon: same icon in both hand boxes, with a shared accent edge */
-#hotbar.nexus-hotbar .nex-loadout-slot.two-handed {
-  border-color: color-mix(in srgb, var(--nex-accent) 45%, transparent);
-}
-
-/* Unarmed strike sits a little apart from the hand boxes */
-#hotbar.nexus-hotbar .nex-loadout-slot.unarmed {
-  margin-top: 4px;
 }
 
 /* Main column */
@@ -584,9 +571,16 @@
 #hotbar.nexus-hotbar .nex-tab {
   color: var(--color-light-3, #ccc);
   opacity: 0.5;
-  /* SVG tab icons (dnd5e-icon) follow the text colour like the font icons */
-  --icon-fill: currentColor;
-  --icon-size: 1em;
+}
+
+/* Image tab icons are drawn as a mask so they follow the text colour like the font icons */
+#hotbar.nexus-hotbar .nex-tab-img {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  -webkit-mask: var(--nex-tab-img) center / contain no-repeat;
+  mask: var(--nex-tab-img) center / contain no-repeat;
 }
 
 #hotbar.nexus-hotbar .nex-tab:hover {
@@ -606,9 +600,8 @@
   box-shadow: none;
 }
 
-#hotbar.nexus-hotbar .nex-highlight[data-type="action"] { --nex-hl: var(--nex-action); }
-#hotbar.nexus-hotbar .nex-highlight[data-type="bonus"] { --nex-hl: var(--nex-bonus); }
-#hotbar.nexus-hotbar .nex-highlight[data-type="reaction"] { --nex-hl: var(--nex-reaction); }
+/* Each filter button uses its activation type's colour (set inline), else the accent */
+#hotbar.nexus-hotbar .nex-highlight { --nex-hl: var(--nex-accent); }
 #hotbar.nexus-hotbar .nex-highlight-clear { --nex-hl: var(--color-light-3, #ccc); }
 
 /* Just the symbol: no box around each button */
@@ -767,64 +760,6 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Portrait right-click roll dialog */
-.nexus-roll-dialog h4 {
-  margin: 6px 0 4px;
-  padding-bottom: 2px;
-  border-bottom: 1px solid var(--color-border, #555);
-}
-
-.nexus-roll-dialog .nex-roll-abilities {
-  display: grid;
-  grid-template-columns: 3rem 1fr 1fr;
-  gap: 4px 6px;
-  align-items: center;
-}
-
-.nexus-roll-dialog .nex-roll-head {
-  font-size: var(--font-size-11, 11px);
-  text-align: center;
-  opacity: 0.7;
-}
-
-.nexus-roll-dialog .nex-roll-ability {
-  font-weight: bold;
-  letter-spacing: 0.05em;
-}
-
-.nexus-roll-dialog .nex-roll-skills {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px 6px;
-}
-
-.nexus-roll-dialog .nex-roll-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  height: 26px;
-  padding: 0 8px;
-  font-size: var(--font-size-13, 13px);
-}
-
-.nexus-roll-dialog .nex-roll-btn.compact {
-  justify-content: center;
-}
-
-.nexus-roll-dialog .nex-roll-mod {
-  font-weight: bold;
-}
-
-/* Proficient skills get a small gold dot */
-.nexus-roll-dialog .nex-roll-btn.proficient .nex-roll-name::before {
-  content: "\25CF";
-  margin-right: 4px;
-  color: var(--dnd5e-color-gold, #9f9275);
-  font-size: 9px;
-  vertical-align: middle;
-}
-
 .nexus-choose-dialog .nex-choose-icon {
   width: 24px;
   text-align: center;
@@ -978,10 +913,7 @@
   box-shadow: 0 0 8px var(--nex-accent);
 }
 
-/* Activation pip (top right) */
-#hotbar.nexus-hotbar .nex-slot[data-act="action"] { --nex-act: var(--nex-action); }
-#hotbar.nexus-hotbar .nex-slot[data-act="bonus"] { --nex-act: var(--nex-bonus); }
-#hotbar.nexus-hotbar .nex-slot[data-act="reaction"] { --nex-act: var(--nex-reaction); }
+/* Activation pip (top right), in the colour the system gives the activation type (set inline) */
 
 #hotbar.nexus-hotbar .nex-pip {
   position: absolute;
@@ -990,7 +922,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--nex-act);
+  background: var(--nex-act, var(--nex-accent));
   box-shadow: 0 0 2px #000, 0 0 0 1px rgba(0, 0, 0, 0.6);
 }
 
@@ -1029,11 +961,7 @@
   filter: grayscale(1);
 }
 
-#hotbar.nexus-hotbar .nex-slot[data-match-act="action"] { --nex-match: var(--nex-action); }
-#hotbar.nexus-hotbar .nex-slot[data-match-act="bonus"] { --nex-match: var(--nex-bonus); }
-#hotbar.nexus-hotbar .nex-slot[data-match-act="reaction"] { --nex-match: var(--nex-reaction); }
-
 #hotbar.nexus-hotbar .nex-grid.filtering .nex-slot.match {
-  border-color: var(--nex-match);
-  box-shadow: 0 0 8px var(--nex-match), 0 0 4px #000;
+  border-color: var(--nex-match, var(--nex-accent));
+  box-shadow: 0 0 8px var(--nex-match, var(--nex-accent)), 0 0 4px #000;
 }

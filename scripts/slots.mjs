@@ -4,15 +4,18 @@
  *
  * Layout data lives in flags, so it travels with the actor:
  *   actor.flags["nexus-hotbar"].bar = {
- *     rows:  { inventory: 2, features: 2, spells: 2 },
- *     slots: { inventory: ["Item.abc", null, "Macro.xyz", ...], ... }
+ *     rows:  { <tab>: 2, ... },
+ *     slots: { <tab>: ["Item.abc", null, "Macro.xyz", ...], ... }
  *   }
+ * Tab ids come from the system module ("items" with none).
  * With no token selected and no assigned character, the bar shows a plain
  * macro grid stored on the User the same way (tab key "macros").
  */
 
-import { ACTIVATIONS, MAX_ROWS, MODULE, TABS } from "./constants.mjs";
-import { activationTypes, autoFillCandidates, isCastable, primaryActivation } from "./items.mjs";
+import { MAX_ROWS, MODULE } from "./constants.mjs";
+import {
+  activationTypes, autoFillCandidates, getActivations, getTabs, primaryActivation, slotInfo, useDocument
+} from "./system.mjs";
 
 /* -------------------------------------------- */
 /*  Storage                                     */
@@ -46,13 +49,7 @@ export async function writeBar(bar, doc, tab, { rows, slots }={}) {
   bar.refresh();
 }
 
-/** Use an item (dnd5e activity flow) or run a macro. */
-export async function useDocument(doc, event) {
-  if ( !doc ) return;
-  if ( doc.documentName === "Macro" ) return doc.execute();
-  if ( typeof doc.use === "function" ) return doc.use({ event });
-  return doc.sheet?.render({ force: true });
-}
+export { useDocument };
 
 /* -------------------------------------------- */
 /*  Rendering                                   */
@@ -75,8 +72,8 @@ export function prepareSlots(bar) {
   }
 
   return {
-    tabs: Object.entries(TABS).map(([id, t]) => ({ id, ...t, active: id === tab })),
-    highlights: Object.entries(ACTIVATIONS).map(([id, a]) => ({ id, ...a, active: bar.highlight.has(id) })),
+    tabs: Object.entries(getTabs()).map(([id, t]) => ({ id, ...t, active: id === tab })),
+    highlights: Object.entries(getActivations()).map(([id, a]) => ({ id, ...a, active: bar.highlight.has(id) })),
     filtering,
     rows,
     canAddRow: rowCount < MAX_ROWS,
@@ -95,29 +92,25 @@ function prepareCell(bar, index, doc, filtering) {
   }
 
   const item = doc;
-  const sys = item.system;
+  const activations = getActivations();
   const types = activationTypes(item);
   cell.uuid = item.uuid;
   cell.act = primaryActivation(types);
+  if ( cell.act ) cell.actColor = activations[cell.act].color;
 
-  // Spell level, charges or quantity
-  if ( item.type === "spell" ) cell.level = sys.level ? String(sys.level) : "C";
-  const usesMax = Number(sys.uses?.max) || 0;
-  if ( usesMax > 0 ) cell.count = String(sys.uses.value ?? 0);
-  else if ( ["consumable", "loot"].includes(item.type) ) cell.count = String(sys.quantity ?? 0);
-
-  // Greyed out when it can't be used right now
-  const depleted = (usesMax > 0 && (sys.uses.value ?? 0) <= 0)
-    || (item.type === "consumable" && (sys.quantity ?? 0) <= 0)
-    || (item.type === "spell" && !isCastable(item));
-  if ( depleted ) cell.cssClass += " depleted";
+  // Badges from the system: level, charges or quantity; greyed out when it can't be used right now
+  const info = slotInfo(item);
+  if ( info.level ) cell.level = String(info.level);
+  if ( (info.count !== undefined) && (info.count !== null) ) cell.count = String(info.count);
+  if ( info.depleted ) cell.cssClass += " depleted";
 
   // Highlighting
   if ( filtering ) {
-    const match = Object.keys(ACTIVATIONS).find(t => bar.highlight.has(t) && types.has(t));
+    const match = Object.keys(activations).find(t => bar.highlight.has(t) && types.has(t));
     if ( match ) {
       cell.cssClass += " match";
       cell.matchAct = match;
+      cell.matchColor = activations[match].color;
     }
     else cell.cssClass += " dim";
   }
@@ -214,15 +207,15 @@ export async function autoFill(bar, row=null) {
   }
 
   const kind = highlight.size
-    ? [...highlight].map(t => `${ACTIVATIONS[t].label}s`).join(" / ")
-    : TABS[tab].label;
+    ? [...highlight].map(t => `${getActivations()[t]?.label ?? t}s`).join(" / ")
+    : getTabs()[tab]?.label ?? "Items";
   if ( !added && !queue.length ) {
     return ui.notifications.info(`Nothing new to add from ${actor.name}'s ${kind}.`);
   }
   if ( !added ) return ui.notifications.warn("No empty slots. Add a row or clear some slots first.");
 
   await writeBar(bar, doc, tab, { slots });
-  let msg = `Added ${added} to ${TABS[tab].label}.`;
+  let msg = `Added ${added} to ${getTabs()[tab]?.label ?? "Items"}.`;
   if ( queue.length ) msg += ` ${queue.length} more didn't fit. Add a row and auto-fill again.`;
   ui.notifications.info(msg);
 }
@@ -236,7 +229,7 @@ export async function clearSlots(bar, row=null) {
   if ( bar.guardLocked() ) return;
   const { doc, tab, rows, slots } = readBar(bar);
   const cols = bar.columns;
-  const label = TABS[tab]?.label ?? "Macros";
+  const label = getTabs()[tab]?.label ?? "Macros";
 
   if ( row === null ) {
     const proceed = await foundry.applications.api.DialogV2.confirm({
@@ -272,14 +265,14 @@ export async function onUse(event, target) {
 export async function onTab(event, target) {
   const actor = this.actor;
   const tab = target.dataset.tab;
-  if ( !actor || !(tab in TABS) || (tab === this.activeTab) ) return;
+  if ( !actor || !(tab in getTabs()) || (tab === this.activeTab) ) return;
   const key = this.constructor.tabKey(actor);
   if ( game.settings.get(MODULE, "startTab") === "last" ) await game.user.setFlag(MODULE, `tabs.${key}`, tab);
   else this.sessionTabs.set(key, tab);
   this.refresh();
 }
 
-/** Toggle an Action / Bonus Action / Reaction highlight. @this {NexusHotbar} */
+/** Toggle an activation type highlight (e.g. Action / Bonus Action / Reaction). @this {NexusHotbar} */
 export async function onHighlight(event, target) {
   const type = target.dataset.type;
   if ( this.highlight.has(type) ) this.highlight.delete(type);
@@ -287,7 +280,7 @@ export async function onHighlight(event, target) {
   return this.render();
 }
 
-/** Turn every Action / Bonus Action / Reaction highlight off. @this {NexusHotbar} */
+/** Turn every activation type highlight off. @this {NexusHotbar} */
 export async function onClearHighlight(event, target) {
   if ( !this.highlight.size ) return;
   this.highlight.clear();

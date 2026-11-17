@@ -1,9 +1,11 @@
 /**
  * Combat controls (Roll Initiative / hourglass / End Turn), the rest buttons they replace,
- * and the your-turn alert.
+ * and the your-turn alert. Rest buttons and the initiative roll come from the system module
+ * (`rests` and `rollInitiative` in registerSystem).
  */
 
 import { MODULE } from "./constants.mjs";
+import { activeSystem } from "./system.mjs";
 
 /**
  * Your-turn alert. Runs on every client when combat changes turn; only players who own the
@@ -62,20 +64,26 @@ export function prepareCombat(actor) {
   return { state: "wait", tooltip: "Waiting for your turn" };
 }
 
-/** Short or long rest, using the dnd5e rest dialogs. @this {NexusHotbar} */
+/** Rest buttons the system supplies, for the template. */
+export function prepareRests() {
+  return (activeSystem()?.rests ?? []).map(({ id, label, icon }) => ({ id, label, icon }));
+}
+
+/** Click a rest button. @this {NexusHotbar} */
 export async function onRest(event, target) {
   const actor = this.actor;
   if ( !actor ) return;
-  if ( target.dataset.rest === "long" ) return actor.longRest?.();
-  return actor.shortRest?.();
+  const rest = (activeSystem()?.rests ?? []).find(r => r.id === target.dataset.rest);
+  return rest?.run?.(actor, event);
 }
 
-/** Roll initiative (dnd5e dialog for advantage / bonuses). @this {NexusHotbar} */
-export async function onInitiative() {
+/** Roll initiative: the system's way (e.g. a dialog for bonuses), else the core roll. @this {NexusHotbar} */
+export async function onInitiative(event) {
   const actor = this.actor;
   const combatant = getCombatant(actor);
   if ( !combatant ) return;
-  if ( typeof actor.rollInitiativeDialog === "function" ) return actor.rollInitiativeDialog();
+  const roll = activeSystem()?.rollInitiative;
+  if ( roll ) return roll(actor, combatant, event);
   return combatant.combat.rollInitiative([combatant.id]);
 }
 
